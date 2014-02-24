@@ -4,7 +4,8 @@ Introduction
 ------------
 The project aims to implement a distributed systems with three clients, three databases and a "middleware".
 The middleware has three nodes and each nodes correspond to a database and a client.
-Databases are simply replicas of each others and all databases contain 3 integer objects which are called A,B and C.
+Databases are simply replicas of each others and all databases contain 3 integer objects.
+Objects are stored in an integer array. Clients and middleware called the objects with their indexes.
 Clients cannot communicate directly to the databases. They have to communicate via middleware.
 When client requests to read an object it tries to connect to local database.
 When client requests to change an object all nodes communicate each other and change the all replicas of databases.
@@ -24,8 +25,26 @@ first receiver of third node communicates sender of second node
 second receiver of third node communicates sender of first node
 
 Initially sender checks the online nodes.
-If there is at least one online node it locks all mutexes of local objects and take the informations and release the mutexs.
+If there is at least one online node it locks mutexes of all objects, take the informations and release the mutexs.
 When initialization done it waits request from client.
 When a sender gets a reading request it can handle locally.
 It simply locks the mutex of corresponding objects then read the object and release the mutex.
-When a sender gets a 
+When a sender gets a writing request it should communicate other nodes with some steps.
+1. Firstly it tries to reconnect offline nodes and sync the database.
+2. it locks the mutex of corresponding object.
+3. it requests to lock the mutex to receivers of online node(s) and waits for respons.
+4. If the sender receives that one of node couldn't lock the mutex,
+   Then it unlock the mutex, send message to other nodes, wait for a random time and go back th first step.
+5. If it cannot receive a respons then it assumes that connection failed and continues with this assumption.
+6. If everything is OK, then it sends message to other nodes, change the object and unlock the mutex.
+
+receivers are simply listeners. They wait simple commands from senders.
+When a command is received, receiver tries the job and send back feedback to sender.
+
+Client Instruction
+------------------
+1. At the beginning of the program client should enter IP and port numbers of each nodes.
+2. When connection settled client can use three commands:
+    READ <index_of_object>
+    ASSIGN <index_of_object> <intiger_value>
+    ADD <index_of_object> <intiger_value>
