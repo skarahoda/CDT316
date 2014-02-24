@@ -1,0 +1,14 @@
+LAB PROJECT OF DISTRIBUTED SYSTEMS 
+
+Introduction
+------------
+The project aims to implement a distributed systems with three clients, three databases and a "middleware".
+The middleware has three nodes and each nodes correspond to a database and a client.
+Databases are simply replicas of each others and all databases contain 3 integer objects which are called A,B and C.
+Clients cannot communicate directly to the databases. They have to communicate via middleware.
+When client requests to read an object it tries to connect to local database.
+When client requests to change an object all nodes communicate each other and change the all replicas of databases.
+
+Structure of Nodes
+------------------
+
