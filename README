@@ -11,4 +11,21 @@ When client requests to change an object all nodes communicate each other and ch
 
 Structure of Nodes
 ------------------
+Each nodes consist of 3 parts, a sender and two receivers.
+Sender of a node gets requests from the client and forwards to the one receiver of each other nodes.
+all receivers communicate only one sender.
 
+For example:
+first receiver of first node communicates sender of second node
+second receiver of first node communicates sender of third node
+first receiver of second node communicates sender of first node
+second receiver of second node communicates sender of third node
+first receiver of third node communicates sender of second node
+second receiver of third node communicates sender of first node
+
+Initially sender checks the online nodes.
+If there is at least one online node it locks all mutexes of local objects and take the informations and release the mutexs.
+When initialization done it waits request from client.
+When a sender gets a reading request it can handle locally.
+It simply locks the mutex of corresponding objects then read the object and release the mutex.
+When a sender gets a 
