@@ -46,5 +46,5 @@ Client Instruction
 1. At the beginning of the program client should enter IP and port numbers of each nodes.
 2. When connection settled client can use three commands:
     READ <index_of_object>
-    ASSIGN <index_of_object> <intiger_value>
-    ADD <index_of_object> <intiger_value>
+    ASSIGN <index_of_object> <integer_value>
+    ADD <index_of_object> <integer_value>
