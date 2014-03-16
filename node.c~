@@ -30,6 +30,8 @@ char node2_IP [50];
 char node3_IP [50];
 int port1;
 int port2;
+int sockSender2;
+int sockSender3;
 int socReceiver2;
 int sockSender3;
 
