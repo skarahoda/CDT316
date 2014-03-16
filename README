@@ -44,6 +44,7 @@ When a command is received, receiver tries the job and send back feedback to sen
 Client Instruction
 ------------------
 1. At the beginning of the program client should enter IP and port numbers of each nodes.
+Note: port numbers cannot be consecutive numbers.
 2. When connection settled client can use three commands:
     READ <index_of_object>
     ASSIGN <index_of_object> <integer_value>
