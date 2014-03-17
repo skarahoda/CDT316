@@ -15,6 +15,8 @@
 #include <sys/signal.h>
 #include <fcntl.h>
 
+#define messageLength 100
+
 typedef struct frame {
         int flagg;
         int seq;
@@ -35,7 +37,7 @@ int sockSender3;
 
 void input();
 void sender();
-void receiver();
+void *receiver(void *arg);
 
 void input()
 {
@@ -81,6 +83,84 @@ void input()
 	}
 }
 
+void *receiver(void *arg)
+{
+	struct hostent *nodeOtherInfo;
+	struct hostent *node1Info;
+	struct sockaddr_in node1;
+	struct sockaddr_in nodeOther;
+	int sock;
+	char *str;
+	int port;
+	str=(char*)arg;
+	char node_IP [50];
+	
+	int nOfBytes;
+	char messageString[messageLength];
+	frame frm;
+	
+	//get the information of other node
+	if(str == "0")
+	{
+		port=port1;
+		strcpy(node_IP, node2_IP);
+	}
+	else
+	{
+		port=port2;
+		strcpy(node_IP, node3_IP);
+	}
+	
+	//Create socket
+	sock = socket(PF_INET, SOCK_DGRAM, 0);
+	if (sock < 0) {
+		perror("Could not create a socket\n");
+		exit(1);
+	}
+	
+	// Make sock non-blocking
+	fcntl(sock,F_SETFL,O_NONBLOCK);
+	
+	// Fix the nodeOther struct
+	nodeOther.sin_family = AF_INET;
+	nodeOther.sin_port = htons(port);
+	nodeOtherInfo = gethostbyname(node_IP);
+	if (nodeOtherInfo == NULL) 
+	{
+		fprintf(stderr, "initSocketAddress - Unknown host %s\n", node_IP);
+		exit(1);
+	}
+	nodeOther.sin_addr = *(struct in_addr *)nodeOtherInfo->h_addr;
+	
+	// Fix node1 struct
+	node1.sin_family = AF_INET;
+	node1.sin_port = htons(port+1);
+	node1Info = gethostbyname(node1_IP);
+	if (node1Info == NULL) 
+	{
+		fprintf(stderr, "initSocketAddress - Unknown host %s\n", node1_IP);
+		exit(1);
+	}
+	node1.sin_addr = *(struct in_addr *)node1Info->h_addr;
+	//node1.sin_addr.s_addr = INADDR_ANY;
+	
+	if (bind(sock, (struct sockaddr *)&node1, sizeof(struct sockaddr)) == -1)
+	{
+		printf("Failure when attempt to bind to node:%s\n",node_IP);
+		exit(1);
+	}
+	printf("receiver is done. Node IP:%s\n",node_IP);
+	while (1) 
+	{
+		nOfBytes = recvfrom(sock, &frm, sizeof(frame), 0, NULL, NULL);
+		if (nOfBytes > 0)
+		{
+			printf("Received from %s: %s\n>",node_IP, frm.data);
+			fflush(stdout);
+		}
+	}
+}
+
 void sender()
 {
 	struct hostent *node1_2Info; 
@@ -92,6 +172,10 @@ void sender()
 	struct sockaddr_in node2;
 	struct sockaddr_in node3;
 	int sock1, sock2;
+	
+	int nOfBytes;
+	char messageString[messageLength];
+	frame frm;
 	
 	//Create sockets
 	sock1 = socket(PF_INET, SOCK_DGRAM, 0);
@@ -166,10 +250,42 @@ void sender()
 		printf("Failure when attempt to bind 2\n");
 		exit(1);
 	}
-	
+	while(1) 
+	{
+		printf("\n>");
+		fgets(messageString, messageLength, stdin);
+		messageString[messageLength - 1] = '\0';
+		if(strncmp(messageString,"quit\n",messageLength) != 0)
+		{
+			strcpy(frm.data, messageString);
+			nOfBytes = sendto(sock1, &frm, sizeof(frm), 0, (struct sockaddr *)&node2, sizeof(struct sockaddr));
+			if (nOfBytes < 0) 
+			{
+				perror("Could not write data\n");
+        			exit(1);
+    			}
+    			nOfBytes = sendto(sock2, &frm, sizeof(frm), 0, (struct sockaddr *)&node3, sizeof(struct sockaddr));
+			if (nOfBytes < 0) 
+			{
+				perror("Could not write data\n");
+        			exit(1);
+    			}
+    		}
+    		else 
+    		{
+    			close(sock1);
+    			close(sock2);
+    			exit(1);
+		}
+	}
 }
 void main()
 {
+	pthread_t tID1;
+	pthread_t tID2;
 	input();
+	char buffer[50];
+	pthread_create(&tID1,NULL,receiver,"0");
+	pthread_create(&tID2,NULL,receiver,"1");
 	sender();
 }
